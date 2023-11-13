@@ -63,7 +63,7 @@ namespace TazaFood_Services.Token
             (
                 issuer: validIssuer,
                 audience: validAudience,
-                expires: DateTime.Now.AddMinutes(double.Parse(expirationTime)),
+                expires: DateTime.Now.AddHours(double.Parse(expirationTime)),
                 claims: authClaims,
                 signingCredentials: new SigningCredentials(authKey, SecurityAlgorithms.HmacSha256Signature)
             );
