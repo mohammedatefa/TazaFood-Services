@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using TazaFood_Core.IRepositories;
+using TazaFood_Core.ISpecifications;
 using TazaFood_Core.Models;
 using TazaFood_Core.Models.Order_Aggregate;
 using TazaFood_Core.Services;
@@ -57,15 +60,24 @@ namespace TazaFood_Services.Order
 
         }
 
-        public Task<IReadOnlyList<TazaFood_Core.Models.Order_Aggregate.Order>> GetAllOrdersForUser(string userEmail)
+        public async Task<IReadOnlyList<TazaFood_Core.Models.Order_Aggregate.Order>> GetAllOrdersForUser(string userEmail)
         {
-            throw new NotImplementedException();
-            //var orders = unitOfWork.Repository<TazaFood_Core.Models.Order_Aggregate.Order>().GetAllWithSpec();
+            var spec = new OrderSpecifications(userEmail);
+            var orders = await unitOfWork.Repository<TazaFood_Core.Models.Order_Aggregate.Order>().GetAllWithSpec(spec);
+            return orders;
         }
 
-        public Task<TazaFood_Core.Models.Order_Aggregate.Order> GetOrderById(int orderId, string userEmail)
+
+        public async Task<TazaFood_Core.Models.Order_Aggregate.Order> GetOrderById(int orderId, string userEmail)
         {
-            throw new NotImplementedException();
+            var spec = new OrderSpecifications(orderId, userEmail);
+            var order = await unitOfWork.Repository<TazaFood_Core.Models.Order_Aggregate.Order>().GetByIdWithSpec(spec);
+            return order;
+        }
+        public async Task<IReadOnlyList<DeliveryMethod>> GetDeleveryMethods()
+        {
+            var methods = await unitOfWork.Repository<DeliveryMethod>().GetAll();
+            return methods;
         }
     }
 }
