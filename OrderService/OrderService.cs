@@ -17,11 +17,13 @@ namespace TazaFood_Services.Order
     {
         private readonly ICartItemsRepository cartItemRepo;
         private readonly IUnitOfWork unitOfWork;
+        private readonly IPaymentService paymentService;
 
-        public OrderService(ICartItemsRepository CartItemRepo,IUnitOfWork UnitOfWork)
+        public OrderService(ICartItemsRepository CartItemRepo,IUnitOfWork UnitOfWork,IPaymentService PaymentService)
         {
             cartItemRepo = CartItemRepo;
             unitOfWork = UnitOfWork;
+            paymentService = PaymentService;
         }
         public async Task<TazaFood_Core.Models.Order_Aggregate.Order?> CreateOrder(string userEmail, string cartId, int deliveryMethodId, Address shippingAddress)
         {
@@ -48,8 +50,19 @@ namespace TazaFood_Services.Order
             //get delivery method from deliverymethod repo 
             var deliveryMethod = await unitOfWork.Repository<DeliveryMethod>().GetById(deliveryMethodId);
 
+            //check about the payment specfication 
+            var spec = new OrderWithPaymentIntenSpecification(cartItem.PaymentIntentId);
+            var existe = await unitOfWork.Repository<TazaFood_Core.Models.Order_Aggregate.Order>().GetByIdWithSpec(spec);
+
+            if (existe is not null)
+            {
+                await unitOfWork.Repository<TazaFood_Core.Models.Order_Aggregate.Order>().Delete(existe);
+                await paymentService.CreateOrUpdatePaymentIntent(cartItem.Id);
+            }
+
+
             //create order 
-            var order = new TazaFood_Core.Models.Order_Aggregate.Order(userEmail, shippingAddress, deliveryMethod, orderitems, subTotal);
+            var order = new TazaFood_Core.Models.Order_Aggregate.Order(userEmail, shippingAddress, deliveryMethod, orderitems, subTotal,cartItem.PaymentIntentId);
             //add order to order data
              await unitOfWork.Repository<TazaFood_Core.Models.Order_Aggregate.Order>().Add(order);
 
