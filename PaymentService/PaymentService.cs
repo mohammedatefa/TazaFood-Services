@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TazaFood_Core.IRepositories;
+using TazaFood_Core.ISpecifications;
 using TazaFood_Core.Models;
 using TazaFood_Core.Models.Order_Aggregate;
 using TazaFood_Core.Services;
@@ -86,6 +87,21 @@ namespace TazaFood_Services.PaymentService
             await cartItemsRepository.UpdateCartAsync(cart);
             return cart;
 
+        }
+
+        public async Task<TazaFood_Core.Models.Order_Aggregate.Order> UpdatePaymentIntentWithSucceededOrFaild(string paymentIntent, bool IsSucceeded)
+        {
+            //first find the order 
+            var spec = new OrderWithPaymentIntenSpecification(paymentIntent);
+            var order = await unitOfWork.Repository<TazaFood_Core.Models.Order_Aggregate.Order>().GetByIdWithSpec(spec);
+
+            if (IsSucceeded)
+                order.OrderStaus = DeliveryStatus.PaymentRecived;
+            else
+                order.OrderStaus = DeliveryStatus.PaymentFailed;
+            await unitOfWork.Repository<TazaFood_Core.Models.Order_Aggregate.Order>().Update(order.Id, order);
+            await unitOfWork.complete();
+            return order;
         }
     }
 }
